@@ -2,26 +2,39 @@ const express = require('express');
 const Unblocker = require('unblocker');
 const app = express();
 
-// Unblocker ayarlarý
 const unblocker = new Unblocker({
     prefix: '/proxy/',
-    responseMiddleware: [
-        // Bazý sitelerdeki güvenlik baþlýklarýný temizle (daha rahat giriþ için)
+    // 1. Ä°STEK KAMUFLAJI (Biz kimiz?)
+    requestMiddleware: [
         (data) => {
+            // KarÅŸÄ± siteye "Ben Windows 10 kullanan en gÃ¼ncel Chrome'um" diyoruz
+            data.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+            
+            // "Ben yÃ¶nlendirildim" diyen ispiyoncu baÅŸlÄ±klarÄ± siliyoruz
+            delete data.headers['x-forwarded-for'];
+            delete data.headers['via'];
+            delete data.headers['forwarded'];
+            
+            return data;
+        }
+    ],
+    // 2. CEVAP KAMUFLAJI (Site bize ne gÃ¶nderdi?)
+    responseMiddleware: [
+        (data) => {
+            // Sitenin "Beni sadece kendi adresimde aÃ§abilirsin" korumasÄ±nÄ± siliyoruz
             delete data.headers['x-frame-options'];
             delete data.headers['content-security-policy'];
+            delete data.headers['x-content-type-options'];
             return data;
         }
     ]
 });
 
-// Proxy'yi kullan
 app.use(unblocker);
 
-app.get('/', (req, res) => res.send('Proxy Sunucusu Aktif!'));
+app.get('/', (req, res) => res.send('KamuflajlÄ± Proxy HazÄ±r!'));
 
-// Render.com için Port ayarý (ÖNEMLÝ)
 const port = process.env.PORT || 8080;
 app.listen(port, () => {
-    console.log(`Çalýþýyor: Port ${port}`);
+    console.log(`Ã‡alÄ±ÅŸÄ±yor: Port ${port}`);
 });
