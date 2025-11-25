@@ -10,9 +10,6 @@ const unblocker = new Unblocker({
         (data) => {
             // Siteye "Ben Chrome'um" diyoruz
             data.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-            
-            // Eğer tarayıcıda kayıtlı bir çerez varsa, onu siteye gönderiyoruz
-            // (Login'in devam etmesi için şart)
             return data;
         }
     ],
@@ -20,25 +17,20 @@ const unblocker = new Unblocker({
     // 2. CEVAPLAR (Siteden Bize Gelenler)
     responseMiddleware: [
         (data) => {
-            // Sitenin "Beni burada açamazsın" korumalarını kaldır
+            // Güvenlik başlıklarını temizle
             delete data.headers['x-frame-options'];
             delete data.headers['content-security-policy'];
             delete data.headers['content-security-policy-report-only'];
             delete data.headers['x-content-type-options'];
 
-            // --- ÇEREZ DÜZELTME OPERASYONU ---
-            // Siteden gelen "Set-Cookie" emirlerini yakalıyoruz
+            // --- ÇEREZ DÜZELTME (HATA BURADAYDI, DÜZELDİ) ---
             const setCookie = data.headers['set-cookie'];
             if (setCookie) {
-                // Çerezleri tek tek elden geçiriyoruz
                 data.headers['set-cookie'] = setCookie.map(cookie => {
-                    // 1. 'Domain=site.com' kısmını siliyoruz (Böylece bizim proxy'ye ait oluyor)
-                    // 2. 'Secure' zorunluluğunu kaldırıyoruz (Bazen SSL çakışması yapar)
-                    // 3. 'SameSite' kuralını gevşetiyoruz
                     return cookie
-                        .replace(/Domain=[^;]+;/Zi, '') 
-                        .replace(/Secure;/Zi, '')
-                        .replace(/SameSite=[^;]+;/Zi, 'SameSite=Lax;');
+                        .replace(/Domain=[^;]+;/gi, '') // 'Z' harfi 'g' ile değiştirildi
+                        .replace(/Secure;/gi, '')      // 'Z' harfi 'g' ile değiştirildi
+                        .replace(/SameSite=[^;]+;/gi, 'SameSite=Lax;'); // 'Z' harfi 'g' ile değiştirildi
                 });
             }
             // ---------------------------------
@@ -48,7 +40,7 @@ const unblocker = new Unblocker({
     ]
 });
 
-// Büyük dosya/video indirmeleri için zaman aşımını kapat
+// Zaman aşımını engelle
 app.use((req, res, next) => {
     req.socket.setTimeout(0); 
     next();
@@ -56,7 +48,7 @@ app.use((req, res, next) => {
 
 app.use(unblocker);
 
-app.get('/', (req, res) => res.send('Cookie & Video Destekli Proxy Hazır!'));
+app.get('/', (req, res) => res.send('Cookie & Video Proxy (Düzeltildi) Hazır!'));
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => {
