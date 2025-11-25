@@ -68,10 +68,11 @@ app.use((req, res, next) => {
 
 app.use(unblocker);
 
-app.get('/', (req, res) => res.send('Cookie & Video Proxy (Düzeltildi) Hazır!'));
+app.get('/', (req, res) => res.send('Cookie & Video Proxy İnşallah Düzeltildi Hazır!'));
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => {
     console.log(`Çalışıyor: Port ${port}`);
 });
+
 
