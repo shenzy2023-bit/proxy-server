@@ -31,6 +31,26 @@ const unblocker = new Unblocker({
                         .replace(/Domain=[^;]+;/gi, '') // 'Z' harfi 'g' ile değiştirildi
                         .replace(/Secure;/gi, '')      // 'Z' harfi 'g' ile değiştirildi
                         .replace(/SameSite=[^;]+;/gi, 'SameSite=Lax;'); // 'Z' harfi 'g' ile değiştirildi
+                    // Bu kısmı responseMiddleware içindeki cookie kodlarının altına ekle:
+
+// Instagram ve Facebook script hatalarını engellemek için HTML içeriğini değiştir
+if (data.contentType && data.contentType.includes('text/html')) {
+    const originalStream = data.stream;
+    data.stream = new (require('stream').PassThrough)();
+    
+    let html = '';
+    originalStream.on('data', chunk => { html += chunk; });
+    originalStream.on('end', () => {
+        // Instagram'ın bütünlük kontrolü yapan kodlarını bozuyoruz
+        const patchedHtml = html
+            .replace(/integrity="[^"]*"/g, '') // Güvenlik kontrolünü sil
+            .replace(/crossorigin="[^"]*"/g, ''); // Çapraz köken kontrolünü sil
+            
+        data.stream.write(patchedHtml);
+        data.stream.end();
+    });
+}
+                    
                 });
             }
             // ---------------------------------
@@ -54,3 +74,4 @@ const port = process.env.PORT || 8080;
 app.listen(port, () => {
     console.log(`Çalışıyor: Port ${port}`);
 });
+
